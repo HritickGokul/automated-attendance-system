@@ -1,0 +1,10 @@
+The Three Major Steps
+
+1. Face Detection
+  ----> haar_cascade.
+
+2. Face Landmark Estimation
+  ----> 180 measurements for each face.
+
+3. Face Recognition
+  ----> Using SVM to compare 180 measurements of test image with trained image and classify it as the one that matches closely.
