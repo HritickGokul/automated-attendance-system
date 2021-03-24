@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import dlib
 import io
-import openface
+from imutils.face_utils import FaceAligner
 
 #This is the model which detects the face
 face_detector = dlib.get_frontal_face_detector()
@@ -12,7 +12,7 @@ predictor_model = "shape_predictor_68_face_landmarks.dat"
 face_pose_predictor = dlib.shape_predictor(predictor_model)
 
 #face aligner model
-face_aligner = openface.AlignDlib(predictor_model)
+face_aligner = FaceAligner(face_pose_predictor, desiredFaceWidth = 256)
 
 #Capturing video from the webcam
 # capture = cv.VideoCapture(0)
@@ -41,21 +41,30 @@ face_aligner = openface.AlignDlib(predictor_model)
 # cv.destroyAllWindows()
 ################################################################################
 image = cv.imread("Pictures/robert.jpg")
+cv.imshow('Original Image', image)
+
+win = dlib.image_window()
+win.set_image(image)
 
 gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
 #It gives the coordinates of the face in the image
 faces = face_detector(gray, 1)
 
-#drawing a rectangle in the faces
 for i, face in enumerate(faces):
+    #drawing a rectangle in the detected faces
+    win.add_overlay(face)
+
+    #Finding the landmarks
     predicted_landmarks = face_pose_predictor(gray, face)
-    # for n in range(0, 68):
-    #     x = predicted_landmarks.part(n).x
-    #     y = predicted_landmarks.part(n).y
-    #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
-    alignedFace = face_aligner.align(534, image, face_rect, landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
-cv.imshow("Detected faces", image)
+    for n in range(0, 68):
+        x = predicted_landmarks.part(n).x
+        y = predicted_landmarks.part(n).y
+        cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+        
+    #Aligning the face
+    alignedFace = face_aligner.align(image, gray, face)
+cv.imshow("Landmarks in detected face", image)
 cv.imshow("Aligned face", alignedFace)
 cv.waitKey(0)
 
