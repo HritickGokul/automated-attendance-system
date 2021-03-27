@@ -1,9 +1,11 @@
 import cv2 as cv
 import numpy as np
+import pandas as pd
 import dlib
 import io
 from imutils.face_utils import FaceAligner
 import face_recognition
+import os
 
 #This is the model which detects the face
 face_detector = dlib.get_frontal_face_detector()
@@ -46,38 +48,53 @@ face_aligner = FaceAligner(face_pose_predictor, desiredFaceWidth = 256)
 # capture.release()
 # cv.destroyAllWindows()
 ################################################################################
-image = cv.imread("Pictures/robert.jpg")
-cv.imshow('Original Image', image)
+feature_labels = []
+for i in range(128):
+    feature_labels.append("m" + str(i))
+feature_labels.append("label")
+print("----labels created----")
 
+df = pd.DataFrame(columns = feature_labels)
+labels = []
 
-# win = dlib.image_window()
-# win.set_image(image)
+people = ['Chandrakala', 'Hrithick Gokul', 'Sai Prasad', 'Sakunthala', 'Sanjana']
 
-#Converting the image to gray
-gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+DIR = r'C:\Users\sanjana\Desktop\Automated Attendace System\Photos'
 
-#It gives the coordinates of the face in the image
-faces = face_detector(gray, 1)
+def create_train():
+    for person in people:
+        path = os.path.join(DIR, person)
+        label = people.index(person)
 
-for i, face in enumerate(faces):
-    #drawing a rectangle in the detected faces
-    # win.add_overlay(face)
+        for img in os.listdir(path):
+            img_path = os.path.join(path, img)
+            img = cv.imread(img_path)
+            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            faces = face_detector(gray, 1)
+            for i, face in enumerate(faces):
+                #Finding the landmarks
+                predicted_landmarks = face_pose_predictor(gray, face)
+                # for n in range(0, 68):
+                #     x = predicted_landmarks.part(n).x
+                #     y = predicted_landmarks.part(n).y
+                #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
 
-    #Finding the landmarks
-    predicted_landmarks = face_pose_predictor(gray, face)
-    # for n in range(0, 68):
-    #     x = predicted_landmarks.part(n).x
-    #     y = predicted_landmarks.part(n).y
-    #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+                #Aligning the face
+                alignedFace = face_aligner.align(img, gray, face)
 
-    #Aligning the face
-    alignedFace = face_aligner.align(image, gray, face)
+                #Face embedding
+                try:
+                    face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+                    face_enc.append(people[label])
+                    df.loc[len(df.index)] = face_enc
+                    print(f"----person {label}----")
+                except IndexError:
+                    continue
 
-    #Face embedding
-    face_encodings = face_recognition.face_encodings(alignedFace)[0]
-    print(len(face_encodings))
-
-cv.imshow("Aligned face", alignedFace)
+    df.to_csv('train.csv')
+    return df
+result_table = create_train()
+print(result_table)
 cv.waitKey(0)
 
 ################################################################################
