@@ -111,8 +111,7 @@ for name, model in models.items():
     #         #predicted values for the test set
     #         y_train_pred = cross_val_predict(classifier, X_test, y_test, cv=3)
     #         print(f"Test f1 score using {name} classifier is {f1_score(y_test, y_train_pred, average = 'macro')}")
-    img = cv.imread("Pictures/chandrakala.jpeg")
-    cv.imshow('Image', img)
+    img = cv.imread("Pictures/sai2.jpeg")
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     faces = face_detector(gray, 1)
     for i, face in enumerate(faces):
@@ -128,7 +127,9 @@ for name, model in models.items():
 
         #Face embedding
         face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+        print(face_enc)
         pred = classifier.predict([face_enc])
-        cv.putText(img, str(pred), (100,100), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
-        cv.imshow(f"{name}'s Prediction", img)
-        cv.waitKey(0)
+        print(pred)
+        # cv.putText(img, str(pred), (100,100), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
+        # cv.imshow(f"{name}'s Prediction", img)
+        # cv.waitKey(0)
