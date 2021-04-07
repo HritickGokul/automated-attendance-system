@@ -25,10 +25,6 @@ from imutils.face_utils import FaceAligner
 import face_recognition
 import os
 ################################################################################
-people = ['Elon Musk', 'Jennifer Lawrence', 'Jimmy Fallon']
-
-DIR = r'C:\Users\sanjana\Desktop\Automated Attendace System\Photos'
-
 face_detector = dlib.get_frontal_face_detector()
 predictor_model = "shape_predictor_68_face_landmarks.dat"
 face_pose_predictor = dlib.shape_predictor(predictor_model)
@@ -42,6 +38,10 @@ def rescale_frame(frame, scale = 0.2):
     height = int(frame.shape[0] * scale)
     dimensions = (width, height)
     return cv.resize(frame, dimensions, interpolation = cv.INTER_AREA)
+################################################################################
+people = ['Elon Musk', 'Jennifer Lawrence', 'Jimmy Fallon']
+
+DIR = r'C:\Users\sanjana\Desktop\Automated Attendace System\Photos'
 
 #Get the data
 data = pd.read_csv('train.csv')
@@ -55,21 +55,20 @@ for i in range(10):
 data = pd.DataFrame(data, index = [i for i in range(len(data))])
 
 #Split the data into train and test set
-strat_split = StratifiedShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 42)
-for train_index, test_index in strat_split.split(data,data["label"]):
-    train_set = data.loc[train_index]
-    test_set = data.loc[test_index]
+# strat_split = StratifiedShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 42)
+# for train_index, test_index in strat_split.split(data,data["label"]):
+#     train_set = data.loc[train_index]
+#     test_set = data.loc[test_index]
 
 #Split the labels separately from the features of the train set
-X_train = train_set.drop(["label"], axis = 1)
+X_train = data.drop(["label"], axis = 1)
 X_train.index = [i for i in range(len(X_train))]
-y_train = train_set["label"]
+y_train = data["label"]
 y_train.index = [i for i in range(len(y_train))]
-y_train = preprocessing.label_binarize(y_train, classes = ['Chandrakala', 'Hrithick Gokul', 'Sai Prasad', 'Sakunthala', 'Sanjana'])
 
 #Training a model
 scaler = StandardScaler()
-sample_face = X_train.iloc[4]
+sample_face = data.iloc[4]
 models = {"KNearestNeighbors":KNeighborsClassifier(),
           "SupportVectorClassifier":SVC(kernel = 'rbf', gamma = 0.5, C = 0.1, random_state = 42),
           "StochasticGradientDescent":SGDClassifier(random_state = 42),
@@ -82,48 +81,73 @@ for name, model in models.items():
     try:
         classifier = model
         X_train_scaled = scaler.fit_transform(X_train.astype(np.float64))
-        classifier.fit(X_train_scaled, y_train)
+        classifier.fit(X_train, y_train)
         y_predd = cross_val_predict(classifier, X_train, y_train, cv = 3)
-        # print(f"Train f1 score using {name} classifier is {f1_score(y_train, y_predd, average = 'weighted')}.")
-        # print(f"Train Cross val score using {name} classifer is {cross_val_score(classifier, X_train_scaled, y_train, cv = 3)}.")
+        print(f"Train f1 score using {name} classifier is {f1_score(y_train, y_predd, average = 'weighted')}.")
+        print(f"Train Cross val score using {name} classifer is {cross_val_score(classifier, X_train, y_train, cv = 3)}.")
     except ValueError:
-        y_train = train_set["label"]
-        y_train.index = [i for i in range(len(y_train))]
-        classifier.fit(X_train_scaled, y_train)
+        y_train = preprocessing.label_binarize(y_train, classes = ['Elon Musk', 'Jennifer Lawrence', 'Jimmy Fallon'])
+        classifier.fit(X_train, y_train)
         y_predd = cross_val_predict(classifier, X_train, y_train, cv = 3)
-        # print(f"Train f1 score using {name} classifier is {f1_score(y_train, y_predd, average = 'weighted')}.")
-        # print(f"Train Cross val score using {name} classifer is {cross_val_score(classifier, X_train_scaled, y_train, cv = 3)}.")
+        print(f"Train f1 score using {name} classifier is {f1_score(y_train, y_predd, average = 'weighted')}.")
+        print(f"Train Cross val score using {name} classifer is {cross_val_score(classifier, X_train, y_train, cv = 3)}.")
 
+    #Testing our model
+    img = cv.imread('Pictures/Jimmy_Jennifer2.jpg')
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    faces = face_detector(gray, 1)
+    for i, face in enumerate(faces):
+        cv.rectangle(img, (face.left(), face.top()), (face.right(), face.bottom()), (255,255,0), 2)
+        #Finding the landmarks
+        predicted_landmarks = face_pose_predictor(gray, face)
+        # for n in range(0, 68):
+        #     x = predicted_landmarks.part(n).x
+        #     y = predicted_landmarks.part(n).y
+        #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+
+        #Aligning the face
+        alignedFace = face_aligner.align(img, gray, face)
+
+        #Face embedding
+        try:
+            face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+            pred = classifier.predict([face_enc])
+            cv.putText(img, str(pred), (face.left(),face.top()), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 1 )
+
+        except IndexError:
+            print("Index Error")
+    cv.imshow(f"{name}'s Prediction", img)
+    cv.waitKey(0)
     #Predicting the test set using the trained model
-    X_test = test_set.drop(["label"], axis = 1)
-    X_test.index = [i for i in range(len(X_test))]
-    y_test = test_set["label"]
-    y_test.index = [i for i in range(len(y_test))]
-    y_test = preprocessing.label_binarize(y_test, classes = ['Chandrakala', 'Hrithick Gokul', 'Sai Prasad', 'Sakunthala', 'Sanjana'])
+    # X_test = test_set.drop(["label"], axis = 1)
+    # X_test.index = [i for i in range(len(X_test))]
+    # y_test = test_set["label"]
+    # y_test.index = [i for i in range(len(y_test))]
+    # y_test = preprocessing.label_binarize(y_test, classes = ['Elon Musk', 'Jennifer Lawrence', 'Jimmy Fallon'])
+    #
+    # try:
+    #     if name == "VotingClassifier":
+    #         continue
+    #     else:
+    #         #predicted values for the test set
+    #         y_train_pred = cross_val_predict(classifier, X_test, y_test, cv=3)
+    #         # print(f"Test f1 score using {name} classifier is {f1_score(y_test, y_train_pred, average = 'weighted')}")
+    #         # trained_models[f"{name}"] = [classifier, f1_score(y_test, y_train_pred, average = 'weighted')*100]
+    #         if name == "KNearestNeighbors":
+    #             final_model = classifier
+    # except ValueError or NotImplementedError:
+    #     if name == "VotingClassifier":
+    #         continue
+    #     else:
+    #         y_test = test_set["label"]
+    #         y_test.index = [i for i in range(len(y_test))]
+    #         #predicted values for the test set
+    #         y_train_pred = cross_val_predict(classifier, X_test, y_test, cv=3)
+    #         # print(f"Test f1 score using {name} classifier is {f1_score(y_test, y_train_pred, average = 'weighted')}")
+    #         # trained_models[f"{name}"] = [classifier, f1_score(y_test, y_train_pred, average = 'weighted')*100]
+    #         if name == "StochasticGradientDescent":
+    #             final_model = classifier
 
-    try:
-        if name == "VotingClassifier":
-            continue
-        else:
-            #predicted values for the test set
-            y_train_pred = cross_val_predict(classifier, X_test, y_test, cv=3)
-            # print(f"Test f1 score using {name} classifier is {f1_score(y_test, y_train_pred, average = 'weighted')}")
-            # trained_models[f"{name}"] = [classifier, f1_score(y_test, y_train_pred, average = 'weighted')*100]
-            if name == "KNearestNeighbors":
-                final_model = classifier
-    except ValueError or NotImplementedError:
-        if name == "VotingClassifier":
-            continue
-        else:
-            y_test = test_set["label"]
-            y_test.index = [i for i in range(len(y_test))]
-            #predicted values for the test set
-            y_train_pred = cross_val_predict(classifier, X_test, y_test, cv=3)
-            # print(f"Test f1 score using {name} classifier is {f1_score(y_test, y_train_pred, average = 'weighted')}")
-            # trained_models[f"{name}"] = [classifier, f1_score(y_test, y_train_pred, average = 'weighted')*100]
-            if name == "StochasticGradientDescent":
-                final_model = classifier
-#
 # for person in people:
 #     path = os.path.join(DIR, person)
 #     label = people.index(person)
@@ -154,31 +178,31 @@ for name, model in models.items():
 #                 # cv.waitKey(0)
 #             except IndexError:
 #                 continue
-capture = cv.VideoCapture(0)
-while True:
-    isTrue, frame = capture.read()
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    faces = face_detector(gray, 1)
-    for i, face in enumerate(faces):
-        #Finding the landmarks
-        predicted_landmarks = face_pose_predictor(gray, face)
-        # for n in range(0, 68):
-        #     x = predicted_landmarks.part(n).x
-        #     y = predicted_landmarks.part(n).y
-        #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
-
-        #Aligning the face
-        alignedFace = face_aligner.align(frame, gray, face)
-
-        #Face embedding
-        try:
-            face_enc = list(face_recognition.face_encodings(alignedFace)[0])
-            pred = final_model.predict([face_enc])
-            cv.putText(frame, str(pred), (100,100), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
-            cv.imshow(f"{name}'s Prediction", frame)
-            if cv.waitKey(20) & 0xFF==ord('d'):
-                break
-        except IndexError:
-            continue
-capture.release()
-cv.destroyAllWindows()
+# capture = cv.VideoCapture(0)
+# while True:
+#     isTrue, frame = capture.read()
+#     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+#     faces = face_detector(gray, 1)
+#     for i, face in enumerate(faces):
+#         #Finding the landmarks
+#         predicted_landmarks = face_pose_predictor(gray, face)
+#         # for n in range(0, 68):
+#         #     x = predicted_landmarks.part(n).x
+#         #     y = predicted_landmarks.part(n).y
+#         #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+#
+#         #Aligning the face
+#         alignedFace = face_aligner.align(frame, gray, face)
+#
+#         #Face embedding
+#         try:
+#             face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+#             pred = final_model.predict([face_enc])
+#             cv.putText(frame, str(pred), (100,100), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
+#             cv.imshow(f"{name}'s Prediction", frame)
+#             if cv.waitKey(20) & 0xFF==ord('d'):
+#                 break
+#         except IndexError:
+#             continue
+# capture.release()
+# cv.destroyAllWindows()
