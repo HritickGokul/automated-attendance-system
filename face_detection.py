@@ -57,7 +57,7 @@ print("----labels created----")
 df = pd.DataFrame(columns = feature_labels)
 labels = []
 
-people = ['Chandrakala', 'Hrithick Gokul', 'Sai Prasad', 'Sakunthala', 'Sanjana']
+people = ['Elon Musk', 'Jennifer Lawrence', 'Jimmy Fallon']
 
 DIR = r'C:\Users\sanjana\Desktop\Automated Attendace System\Photos'
 
