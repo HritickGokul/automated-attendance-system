@@ -93,63 +93,63 @@ for name, model in models.items():
         print(f"Train Cross val score using {name} classifer is {cross_val_score(classifier, X_train, y_train, cv = 3)}.")
 
     #Testing our model using images
-    # img = cv.imread('Pictures/Jimmy_Jennifer2.jpg')
-    # gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    # faces = face_detector(gray, 1)
-    # for i, face in enumerate(faces):
-    #     cv.rectangle(img, (face.left(), face.top()), (face.right(), face.bottom()), (255,255,0), 2)
-    #     #Finding the landmarks
-    #     predicted_landmarks = face_pose_predictor(gray, face)
-    #     # for n in range(0, 68):
-    #     #     x = predicted_landmarks.part(n).x
-    #     #     y = predicted_landmarks.part(n).y
-    #     #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
-    #
-    #     #Aligning the face
-    #     alignedFace = face_aligner.align(img, gray, face)
-    #
-    #     #Face embedding
-    #     try:
-    #         face_enc = list(face_recognition.face_encodings(alignedFace)[0])
-    #         pred = classifier.predict([face_enc])
-    #         cv.putText(img, str(pred), (face.left(),face.top()), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 1 )
-    #
-    #     except IndexError:
-    #         print("Index Error")
-    # cv.imshow(f"{name}'s Prediction", img)
-    # cv.waitKey(0)
+    img = cv.imread('Pictures/Elon_test2.jpg')
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    faces = face_detector(gray, 1)
+    for i, face in enumerate(faces):
+        cv.rectangle(img, (face.left(), face.top()), (face.right(), face.bottom()), (255,255,0), 2)
+        #Finding the landmarks
+        predicted_landmarks = face_pose_predictor(gray, face)
+        # for n in range(0, 68):
+        #     x = predicted_landmarks.part(n).x
+        #     y = predicted_landmarks.part(n).y
+        #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+
+        #Aligning the face
+        alignedFace = face_aligner.align(img, gray, face)
+
+        #Face embedding
+        try:
+            face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+            pred = classifier.predict([face_enc])
+            cv.putText(img, str(pred), (face.left(),face.top()), cv.FONT_HERSHEY_COMPLEX, 1.0, (255,255,255), thickness = 2 )
+
+        except IndexError:
+            print("Index Error")
+    cv.imshow(f"{name}'s Prediction", img)
+    cv.waitKey(0)
 
     #Testing our model using videos
-    capture = cv.VideoCapture(0)
-    while True:
-        isTrue, frame = capture.read()
-        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        faces = face_detector(gray, 1)
-        for i, face in enumerate(faces):
-            cv.rectangle(frame, (face.left(), face.top()), (face.right(), face.bottom()), (0,255,255), 2)
-            #Finding the landmarks
-            predicted_landmarks = face_pose_predictor(gray, face)
-            # for n in range(0, 68):
-            #     x = predicted_landmarks.part(n).x
-            #     y = predicted_landmarks.part(n).y
-            #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
-
-            #Aligning the face
-            alignedFace = face_aligner.align(frame, gray, face)
-
-            #Face embedding
-            try:
-                face_enc = list(face_recognition.face_encodings(alignedFace)[0])
-                pred = classifier.predict([face_enc])
-                cv.putText(frame, str(pred), (face.left(), face.top()), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
-
-            except IndexError:
-                continue
-        cv.imshow(f"{name}'s Prediction", frame)
-        if cv.waitKey(20) & 0xFF==ord('d'):
-            break
-    capture.release()
-    cv.destroyAllWindows()
+    # capture = cv.VideoCapture(0)
+    # while True:
+    #     isTrue, frame = capture.read()
+    #     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    #     faces = face_detector(gray, 1)
+    #     for i, face in enumerate(faces):
+    #         cv.rectangle(frame, (face.left(), face.top()), (face.right(), face.bottom()), (0,255,255), 2)
+    #         #Finding the landmarks
+    #         predicted_landmarks = face_pose_predictor(gray, face)
+    #         # for n in range(0, 68):
+    #         #     x = predicted_landmarks.part(n).x
+    #         #     y = predicted_landmarks.part(n).y
+    #         #     cv.circle(image, (x, y), 1, (0, 255, 255), 1)
+    #
+    #         #Aligning the face
+    #         alignedFace = face_aligner.align(frame, gray, face)
+    #
+    #         #Face embedding
+    #         try:
+    #             face_enc = list(face_recognition.face_encodings(alignedFace)[0])
+    #             pred = classifier.predict([face_enc])
+    #             cv.putText(frame, str(pred), (face.left(), face.top()), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness = 2 )
+    #
+    #         except IndexError:
+    #             continue
+    #     cv.imshow(f"{name}'s Prediction", frame)
+    #     if cv.waitKey(20) & 0xFF==ord('d'):
+    #         break
+    # capture.release()
+    # cv.destroyAllWindows()
 
     #Predicting the test set using the trained model
     # X_test = test_set.drop(["label"], axis = 1)
